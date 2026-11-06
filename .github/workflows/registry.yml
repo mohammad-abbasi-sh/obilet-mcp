@@ -1,0 +1,61 @@
+name: Publish to MCP Registry
+
+# Official MCP Registry (registry.modelcontextprotocol.io) via GitHub OIDC.
+# No secret, no interactive login: the runner's OIDC token proves ownership
+# of the io.github.mohammad-abbasi-sh/* namespace.
+# Refs: https://github.com/modelcontextprotocol/registry
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # required for OIDC -> MCP Registry
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync server.json version to tag
+        # Only sync when running on a version tag (v*). On workflow_dispatch
+        # (ref = refs/heads/main) keep the version committed in server.json.
+        run: |
+          VER=""
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            VER="${TAG#v}"
+          fi
+          if [ -n "$VER" ]; then
+            python3 - "$VER" << 'EOF'
+          import json, sys
+          ver = sys.argv[1]
+          d = json.load(open('server.json'))
+          d['version'] = ver
+          for pkg in d.get('packages', []):
+              pkg['version'] = ver
+          json.dump(d, open('server.json', 'w'), indent=2, ensure_ascii=False)
+          print('server.json version ->', ver)
+          EOF
+          else
+            echo "No version tag ($GITHUB_REF); keeping server.json version as-is"
+          fi
+
+      - name: Install mcp-publisher
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.7/mcp-publisher_linux_amd64.tar.gz" -o /tmp/mcp-publisher.tar.gz
+          tar -xzf /tmp/mcp-publisher.tar.gz -C /tmp
+          sudo mv /tmp/mcp-publisher /usr/local/bin/mcp-publisher
+          mcp-publisher --version
+
+      - name: Validate server.json
+        run: mcp-publisher validate server.json
+
+      - name: Publish to MCP Registry (OIDC)
+        run: |
+          mcp-publisher login github-oidc
+          mcp-publisher publish server.json
+        # A registry outage must never break the release; re-run from Actions if needed.
+        continue-on-error: true
