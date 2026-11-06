@@ -1,0 +1,42 @@
+{
+ "items": [
+  {
+   "id": 356,
+   "text": "Ankara",
+   "display": "Ankara",
+   "ufiId": "",
+   "seoLocationName": "ankara",
+   "providerLocationId": "98646",
+   "parentId": 222,
+   "type": 5,
+   "isDomestic": true,
+   "currentLocationId": 222
+  },
+  {
+   "id": 1835,
+   "text": "Kayaş - Ankara",
+   "display": "Kayaş",
+   "ufiId": "",
+   "seoLocationName": "kayas",
+   "providerLocationId": "",
+   "parentId": 222,
+   "type": 5,
+   "isDomestic": true,
+   "currentLocationId": 1835
+  },
+  {
+   "id": 116112,
+   "text": "Anjara - , Ürdün",
+   "display": "Anjara",
+   "ufiId": "",
+   "seoLocationName": null,
+   "providerLocationId": "",
+   "parentId": 83231,
+   "type": 5,
+   "isDomestic": false,
+   "currentLocationId": 116112
+  }
+ ],
+ "pageSize": 3,
+ "total": 3
+}
