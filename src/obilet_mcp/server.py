@@ -32,7 +32,7 @@ Lira (TRY) unless noted. Sorting is client-side: price_asc (cheapest
 first), departure (earliest first), duration (shortest first).
 Read-only, no login, no API key. Transport uses Chrome TLS
 impersonation with a persistent session; requests are spaced ~0.8s
-apart. Built by Mohammad Abbasi (mohammad-abbasi-sh) — Turkey MCP
+apart. Built by Mohammad Abbasi (mohammad-abbasi-sh) — https://almanibama.ir · https://mabbasi.ir — Turkey MCP
 factory.\
 """
 
