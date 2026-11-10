@@ -95,9 +95,9 @@ before users hit it.
 ## Install
 
 ```bash
-uvx obilet-mcp==0.1.0        # run directly (needs uv)
+uvx obilet-mcp==0.1.1        # run directly (needs uv)
 # or
-pip install obilet-mcp==0.1.0
+pip install obilet-mcp==0.1.1
 obilet-mcp         # starts the MCP server on stdio
 ```
 
