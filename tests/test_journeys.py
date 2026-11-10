@@ -163,8 +163,116 @@ class TestValidation(unittest.TestCase):
             J.resolve_sort("bogus")
 
 
+class TestFilters(unittest.TestCase):
+    def setUp(self):
+        self.data = _read("journeys-349-356.json")
+
+    def test_after_window(self):
+        rows = J.parse_journeys(self.data, limit=10, after="08:00")
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(r["departure"] >= "2026-11-07T08:00:00" for r in rows))
+
+    def test_before_window(self):
+        rows = J.parse_journeys(self.data, limit=10, before="08:00")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["departure"], "2026-11-07T07:30:00")
+
+    def test_after_after_before(self):
+        with self.assertRaises(ValueError):
+            J.parse_journeys(self.data, after="19:00", before="08:00")
+
+    def test_bad_time(self):
+        for bad in ("25:00", "9:00", "08:60", "noon"):
+            with self.assertRaises(ValueError):
+                J.parse_journeys(self.data, after=bad)
+
+    def test_destination_terminal(self):
+        rows = J.parse_journeys(self.data, limit=10, destination_terminal="aşti")
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(
+            J.parse_journeys(self.data, limit=10, destination_terminal="Esenler"),
+            [],
+        )
+
+    def test_min_seats(self):
+        rows = J.parse_journeys(self.data, limit=10, min_seats=35)
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(r["available_seats"] >= 35 for r in rows))
+
+    def test_min_rating(self):
+        self.assertEqual(len(J.parse_journeys(self.data, limit=10, min_rating=8.5)), 3)
+        self.assertEqual(len(J.parse_journeys(self.data, limit=10, min_rating=9)), 0)
+        with self.assertRaises(ValueError):
+            J.parse_journeys(self.data, min_rating=11)
+        with self.assertRaises(ValueError):
+            J.parse_journeys(self.data, min_rating=-1)
+
+    def test_offset(self):
+        rows = J.parse_journeys(self.data, limit=10, offset=1)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["journey_id"], 1432053102)
+        with self.assertRaises(ValueError):
+            J.parse_journeys(self.data, offset=-1)
+
+    def test_sample_day(self):
+        rows = J.parse_journeys(self.data, limit=10)
+        sampled = J.sample_day_journeys(rows)
+        self.assertEqual(len(sampled), 3)
+        self.assertEqual(
+            {r["journey_id"] for r in sampled},
+            {1432053091, 1432053102, 1432053121},
+        )
+
+    def test_sample_day_empty(self):
+        self.assertEqual(J.sample_day_journeys([]), [])
+
+    def test_validate_sampling(self):
+        self.assertEqual(J.validate_sampling("first"), "first")
+        self.assertEqual(J.validate_sampling("day"), "day")
+        with self.assertRaises(ValueError):
+            J.validate_sampling("bogus")
+
+
+class TestEnvelope(unittest.TestCase):
+    def test_ok_envelope(self):
+        from obilet_mcp.server import _ok
+
+        out = json.loads(_ok({"count": 1}))
+        self.assertEqual(out["count"], 1)
+        self.assertEqual(out["source"], "obilet.com")
+        self.assertIn("Unofficial read-only data", out["disclaimer"])
+        self.assertIn("fetched_at", out)
+
+    def test_err_envelope(self):
+        from obilet_mcp.server import _err
+
+        out = json.loads(_err(ValueError("bad")))
+        self.assertEqual(out["error"], "bad")
+        self.assertEqual(out["source"], "obilet.com")
+        self.assertIn("fetched_at", out)
+
+    def test_bad_filter_tool_error_json(self):
+        from obilet_mcp.server import obilet_search_bus_journeys
+
+        out = json.loads(
+            obilet_search_bus_journeys(349, 356, "2026-11-07", after="99:99")
+        )
+        self.assertIn("error", out)
+        self.assertEqual(out["source"], "obilet.com")
+        out2 = json.loads(
+            obilet_search_bus_journeys(349, 356, "2026-11-07", min_rating=11)
+        )
+        self.assertIn("error", out2)
+
+    def test_bad_sampling_tool_error_json(self):
+        from obilet_mcp.server import obilet_price_stats
+
+        out = json.loads(obilet_price_stats(349, 356, "2026-11-07", sampling="bogus"))
+        self.assertIn("error", out)
+
+
 class TestServerToolsRegistered(unittest.TestCase):
-    def test_five_tools(self):
+    def test_six_tools(self):
         from obilet_mcp.server import mcp
 
         tools = asyncio.run(mcp.list_tools())
@@ -173,6 +281,7 @@ class TestServerToolsRegistered(unittest.TestCase):
             names,
             [
                 "obilet_flight_summary",
+                "obilet_health",
                 "obilet_journey_detail",
                 "obilet_price_stats",
                 "obilet_search_bus_journeys",
