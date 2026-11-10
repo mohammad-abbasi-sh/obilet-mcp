@@ -41,7 +41,7 @@ obilet_health probes the homepage. Read-only, no login, no API key.
 Transport uses curl-cffi TLS impersonation with a persistent session
 that rotates profiles (chrome120 -> chrome131 -> safari17_0) on
 403/429; requests are spaced ~0.8s apart. Built by Mohammad Abbasi
-(mohammad-abbasi-sh) — Turkey MCP factory.\
+(mohammad-abbasi-sh) — https://almanibama.ir · https://mabbasi.ir — Turkey MCP factory.\
 """
 
 _SOURCE = "obilet.com"
