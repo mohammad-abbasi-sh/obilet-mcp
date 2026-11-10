@@ -83,9 +83,9 @@ Referer فرستاده می‌شوند. مکان‌ها: POST به ‎/json/dura
 ## نصب
 
 ```bash
-uvx obilet-mcp==0.1.0        # اجرای مستقیم (نیازمند uv)
+uvx obilet-mcp==0.1.1        # اجرای مستقیم (نیازمند uv)
 # یا
-pip install obilet-mcp==0.1.0
+pip install obilet-mcp==0.1.1
 obilet-mcp         # اجرای سرور MCP روی stdio
 ```
 
