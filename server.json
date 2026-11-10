@@ -10,7 +10,7 @@
       "transport": {
         "type": "stdio"
       },
-      "version": "0.1.0"
+      "version": "0.1.1"
     }
   ],
   "repository": {
@@ -18,6 +18,6 @@
     "url": "https://github.com/mohammad-abbasi-sh/obilet-mcp"
   },
   "title": "obilet.com Bus & Flight Tickets",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "websiteUrl": "https://github.com/mohammad-abbasi-sh/obilet-mcp"
 }
