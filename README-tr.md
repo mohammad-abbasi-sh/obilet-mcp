@@ -83,9 +83,9 @@ fark etmeden görülür.
 ## Kurulum
 
 ```bash
-uvx obilet-mcp==0.1.0        # doğrudan çalıştır (uv gerekir)
+uvx obilet-mcp==0.1.1        # doğrudan çalıştır (uv gerekir)
 # veya
-pip install obilet-mcp==0.1.0
+pip install obilet-mcp==0.1.1
 obilet-mcp         # MCP sunucusunu stdio üzerinde başlatır
 ```
 
