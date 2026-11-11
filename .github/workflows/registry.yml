@@ -43,6 +43,40 @@ jobs:
             echo "No version tag ($GITHUB_REF); keeping server.json version as-is"
           fi
 
+      - name: Wait for PyPI
+        # The registry validates that the PyPI package + version exists,
+        # but the PyPI publish workflow runs in parallel with this one.
+        # Poll until the version appears instead of racing it: a 400 here
+        # used to fail silently under continue-on-error and left 40/43
+        # servers unlisted in the registry (2026-11-11).
+        run: |
+          python3 - << 'EOF'
+          import json, sys, time, urllib.request, urllib.error
+          d = json.load(open('server.json'))
+          pkg = d['packages'][0]
+          name = pkg.get('identifier') or pkg.get('name')
+          ver = pkg['version']
+          if not name:
+              print('ERROR: no package identifier/name in server.json')
+              sys.exit(1)
+          url = f'https://pypi.org/pypi/{name}/json'
+          for attempt in range(1, 21):
+              try:
+                  with urllib.request.urlopen(url, timeout=30) as r:
+                      data = json.load(r)
+                  if ver in data.get('releases', {}):
+                      print(f'PyPI {name}=={ver} is live (attempt {attempt})')
+                      sys.exit(0)
+              except urllib.error.HTTPError as e:
+                  print(f'attempt {attempt}: PyPI returned {e.code}')
+              except Exception as e:
+                  print(f'attempt {attempt}: {e}')
+              print(f'attempt {attempt}: {name}=={ver} not on PyPI yet, waiting 30s...')
+              time.sleep(30)
+          print(f'ERROR: {name}=={ver} did not appear on PyPI after 10 minutes')
+          sys.exit(1)
+          EOF
+
       - name: Install mcp-publisher
         run: |
           curl -sL "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.7/mcp-publisher_linux_amd64.tar.gz" -o /tmp/mcp-publisher.tar.gz
@@ -54,8 +88,8 @@ jobs:
         run: mcp-publisher validate server.json
 
       - name: Publish to MCP Registry (OIDC)
+        # Failures must fail the run visibly: a silent publish failure
+        # once left 40/43 servers unlisted in the registry (2026-11-11).
         run: |
           mcp-publisher login github-oidc
           mcp-publisher publish server.json
-        # A registry outage must never break the release; re-run from Actions if needed.
-        continue-on-error: true
